@@ -20,6 +20,10 @@ const TimetableTable = ({
   curriculumData,
   allCoursesRaw,
   allTeachersRaw,
+  roomBookings,
+  allRoomsRaw,
+  currentTabMeta,
+  currentTableKey,
 }) => {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -115,6 +119,12 @@ const TimetableTable = ({
                     curriculumData={curriculumData}
                     allCoursesRaw={allCoursesRaw}
                     allTeachersRaw={allTeachersRaw}
+                    roomBookings={roomBookings}
+                    allRoomsRaw={allRoomsRaw}
+                    timeSlots={timeSlots}
+                    days={days}
+                    currentTabMeta={currentTabMeta}
+                    currentTableKey={currentTableKey}
                   />
                 );
               })}

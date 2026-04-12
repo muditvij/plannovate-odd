@@ -215,13 +215,17 @@ export async function resolveBatchDataForDisplay(batchData) {
     
     // If we have IDs, use them; otherwise fall back to the old format
     if (value.teacherId) {
-      resolved[key].teacher = await getTeacherDisplayName(value.teacherId);
+      const ids = String(value.teacherId).split(',').map(id => id.trim()).filter(Boolean);
+      const names = await Promise.all(ids.map(id => getTeacherDisplayName(id)));
+      resolved[key].teacher = names.join(', ');
     }
     if (value.courseId) {
       resolved[key].course = await getCourseDisplayName(value.courseId);
     }
     if (value.roomId) {
-      resolved[key].room = await getRoomDisplayName(value.roomId);
+      const ids = String(value.roomId).split(',').map(id => id.trim()).filter(Boolean);
+      const names = await Promise.all(ids.map(id => getRoomDisplayName(id)));
+      resolved[key].room = names.join(', ');
     }
   }
   
@@ -271,10 +275,15 @@ export async function convertDisplayToIds(batchData) {
   
   // Convert each batch entry
   for (const [key, value] of Object.entries(batchData)) {
-    // Start with only batchName - NO display names
+    // Start with only batchName and remark - NO display names
     converted[key] = {
       batchName: value.batchName || ""
     };
+    
+    // Preserve remark field if it exists
+    if (value.remark !== undefined) {
+      converted[key].remark = value.remark;
+    }
     
     // If IDs already exist, use them
     if (value.courseId) {
@@ -291,9 +300,10 @@ export async function convertDisplayToIds(batchData) {
       converted[key].teacherId = String(value.teacherId);
     } else if (value.teacher) {
       // Convert display name to ID
-      const teacherId = teacherByID.get(value.teacher.trim());
-      if (teacherId) {
-        converted[key].teacherId = teacherId;
+      const parts = value.teacher.split(',').map(p => p.trim()).filter(Boolean);
+      const ids = parts.map(p => teacherByID.get(p) || p);
+      if (ids.length > 0) {
+        converted[key].teacherId = ids.join(', ');
       }
     }
     
@@ -301,25 +311,24 @@ export async function convertDisplayToIds(batchData) {
       converted[key].roomId = String(value.roomId);
     } else if (value.room) {
       // Convert display name to ID
-      const roomStr = value.room.trim();
-      let roomId = roomByDisplay.get(roomStr);
-      
-      // If not found, try extracting parts
-      if (!roomId) {
-        const spaceParts = roomStr.split(' ');
-        if (spaceParts.length >= 2) {
-          const lookupKey = `${spaceParts[0].trim()} ${spaceParts.slice(1).join(' ').trim()}`;
-          roomId = roomByDisplay.get(lookupKey);
+      const parts = value.room.split(',').map(p => p.trim()).filter(Boolean);
+      const ids = [];
+      for (const roomStr of parts) {
+        let roomId = roomByDisplay.get(roomStr);
+        if (!roomId) {
+          const spaceParts = roomStr.split(' ');
+          if (spaceParts.length >= 2) {
+            const lookupKey = `${spaceParts[0].trim()} ${spaceParts.slice(1).join(' ').trim()}`;
+            roomId = roomByDisplay.get(lookupKey);
+          }
+          if (!roomId && spaceParts.length >= 1) {
+            roomId = roomByDisplay.get(spaceParts[0].trim());
+          }
         }
-        
-        // Try just the ID part
-        if (!roomId && spaceParts.length >= 1) {
-          roomId = roomByDisplay.get(spaceParts[0].trim());
-        }
+        ids.push(roomId || roomStr);
       }
-      
-      if (roomId) {
-        converted[key].roomId = roomId;
+      if (ids.length > 0) {
+        converted[key].roomId = ids.join(', ');
       }
     }
   }

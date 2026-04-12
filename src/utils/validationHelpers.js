@@ -113,12 +113,18 @@ export async function validateTeacher(teacherValue) {
   }
   
   const validTeachers = await fetchValidTeachers();
-  const isValid = validTeachers.has(teacherValue.trim());
+  const teachers = teacherValue.split(',').map(t => t.trim()).filter(Boolean);
   
-  return {
-    isValid,
-    error: isValid ? null : `Teacher "${teacherValue}" not found in database`
-  };
+  for (const t of teachers) {
+    if (!validTeachers.has(t)) {
+      return {
+        isValid: false,
+        error: `Teacher "${t}" not found in database`
+      };
+    }
+  }
+  
+  return { isValid: true, error: null };
 }
 
 /**
@@ -130,23 +136,31 @@ export async function validateRoom(roomValue) {
   }
   
   const validRooms = await fetchValidRooms();
-  const roomStr = roomValue.trim();
+  const rooms = roomValue.split(',').map(r => r.trim()).filter(Boolean);
   
-  // Check exact match first
-  if (validRooms.has(roomStr)) {
-    return { isValid: true, error: null };
+  for (const roomStr of rooms) {
+    let isValid = false;
+    
+    // Check exact match first
+    if (validRooms.has(roomStr)) {
+      isValid = true;
+    } else {
+      // Check if it's just the room ID without faculty
+      const parts = roomStr.split(' ');
+      if (parts.length >= 1 && validRooms.has(parts[0])) {
+        isValid = true;
+      }
+    }
+    
+    if (!isValid) {
+      return {
+        isValid: false,
+        error: `Room "${roomStr}" not found in database`
+      };
+    }
   }
   
-  // Check if it's just the room ID without faculty
-  const parts = roomStr.split(' ');
-  if (parts.length === 1 && validRooms.has(parts[0])) {
-    return { isValid: true, error: null };
-  }
-  
-  return {
-    isValid: false,
-    error: `Room "${roomValue}" not found in database`
-  };
+  return { isValid: true, error: null };
 }
 
 /**

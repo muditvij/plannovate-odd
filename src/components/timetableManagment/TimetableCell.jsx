@@ -67,7 +67,8 @@ const TeacherCombobox = ({
     }
   };
 
-  const filterStr = (value || "").toLowerCase();
+  const fragments = (value || "").split(',');
+  const filterStr = fragments[fragments.length - 1].trim().toLowerCase();
   const filterOpts = (opts) =>
     opts.filter((o) => !filterStr || o.toLowerCase().includes(filterStr));
 
@@ -89,7 +90,10 @@ const TeacherCombobox = ({
   const hasOptions = flatOptions.length > 0;
 
   const handleSelect = (val) => {
-    onChange(val);
+    const parts = (value || "").split(',');
+    parts[parts.length - 1] = val;
+    const newValue = parts.map(s => s.trim()).filter(Boolean).join(", ");
+    onChange(newValue);
     setOpen(false);
   };
 
@@ -267,13 +271,17 @@ const SimpleCombobox = ({
     }
   };
 
-  const filterStr = (value || "").toLowerCase();
+  const fragments = (value || "").split(',');
+  const filterStr = fragments[fragments.length - 1].trim().toLowerCase();
   const filtered = (options || []).filter(
     (o) => !filterStr || o.toLowerCase().includes(filterStr)
   );
 
   const handleSelect = (val) => {
-    onChange(val);
+    const parts = (value || "").split(',');
+    parts[parts.length - 1] = val;
+    const newValue = parts.map(s => s.trim()).filter(Boolean).join(", ");
+    onChange(newValue);
     setOpen(false);
   };
 
@@ -379,6 +387,12 @@ const TimetableCell = ({
   curriculumData,
   allCoursesRaw,
   allTeachersRaw,
+  roomBookings,
+  allRoomsRaw,
+  timeSlots,
+  days,
+  currentTabMeta,
+  currentTableKey,
 }) => {
   const key = `${rowIndex}-${colIndex}`;
   const batchCount = batches[key] || 1;
@@ -387,7 +401,7 @@ const TimetableCell = ({
   // A cell is "filled" if any of its batches has at least one value
   const isFilled = Array.from({ length: batchCount }).some((_, bi) => {
     const d = batchData[`${rowIndex}-${colIndex}-${bi}`] || {};
-    return !!(d.course || d.teacher || d.room);
+    return !!(d.course || d.teacher || d.room || (d.remark !== undefined && d.remark !== ""));
   });
 
   const courses = Array.isArray(courseOptions) ? courseOptions : [];
@@ -475,6 +489,7 @@ const TimetableCell = ({
   const [showDropMenu, setShowDropMenu] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [hoveredAction, setHoveredAction] = useState(null);
+  const [dismissedBookingWarnings, setDismissedBookingWarnings] = useState({});
   
   // Drag and drop handlers
   const handleDragStart = (e) => {
@@ -1296,6 +1311,59 @@ const TimetableCell = ({
                   <AlertCircle className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-orange-500" />
                 )}
               </div>
+
+              {/* Cross-timetable Room Booking Warning */}
+              {(() => {
+                if (!batch.roomId || !roomBookings || !days || !timeSlots) return null;
+                const warnKey = `${batchIndex}-${batch.roomId}`;
+                if (dismissedBookingWarnings[warnKey]) return null;
+                
+                const cellDay = (days || [])[colIndex];
+                const cellTime = (timeSlots || [])[rowIndex];
+                if (!cellDay || !cellTime) return null;
+                
+                const norm = (v) => String(v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+                const allBookingsAtSlot = (roomBookings[String(batch.roomId)] || []).filter(
+                  (b) => norm(b.day) === norm(cellDay) && norm(b.time) === norm(cellTime)
+                );
+                
+                // Smart exclusion: 
+                // Exclude any draft bookings coming from the EXACT SAME tab doing the editing.
+                const bookings = allBookingsAtSlot.filter((b) => {
+                  if (b.source === "draft" && b.sourceTableKey === currentTableKey) return false;
+                  return true;
+                });
+                
+                if (bookings.length === 0) return null;
+                
+                // Build label showing who it's booked by
+                const bookedByLabels = bookings.map((b) => {
+                  const parts = [b.class, b.branch].filter(Boolean);
+                  return parts.join(" · ") || b.timetableId || "Another timetable";
+                });
+                const uniqueLabels = [...new Set(bookedByLabels)];
+                
+                return (
+                  <div className="mt-0.5 flex items-start gap-0.5 bg-amber-50 border border-amber-200 rounded px-1 py-0.5 animate-fadeIn">
+                    <AlertCircle className="w-2.5 h-2.5 text-amber-500 shrink-0 mt-[1px]" />
+                    <span className="text-[7px] text-amber-700 leading-tight flex-1">
+                      Room occupied by {uniqueLabels.join(", ")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDismissedBookingWarnings((prev) => ({ ...prev, [warnKey]: true }));
+                      }}
+                      className="text-amber-400 hover:text-amber-600 shrink-0 -mt-[1px]"
+                      title="Dismiss warning"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                );
+              })()}
 
               {/* Remark Field */}
               {batch.remark !== undefined && (

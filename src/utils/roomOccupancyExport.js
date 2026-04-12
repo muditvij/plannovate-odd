@@ -87,6 +87,7 @@ function buildAllRoomsOccupancyGrid(rooms, schedules, timeSlots) {
             
             if (occ.course) parts.push(`${occ.course}`);
             if (occ.teacher) parts.push(`(${occ.teacher})`);
+            if (occ.remark) parts.push(`{${occ.remark}}`);
             
             return parts.join(" ");
           }).join(", ");
@@ -412,6 +413,7 @@ function buildMobileRoomsOccupancyGrid(rooms, schedules, timeSlots) {
             
             if (occ.course) parts.push(`C: ${occ.course}`);
             if (occ.teacher) parts.push(`T: ${occ.teacher}`);
+            if (occ.remark) parts.push(`{${occ.remark}}`);
             
             return parts.join(" ");
           }).join(", ");

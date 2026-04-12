@@ -66,6 +66,7 @@ function buildTeacherOccupancyGrid(teachers, schedules, timeSlots, dayKey, dayLa
           if (occ.course) parts.push(`Course: ${occ.course}`);
           
           if (occ.room) parts.push(`Room: ${occ.room}`);
+          if (occ.remark) parts.push(`Remark: ${occ.remark}`);
           
           return parts.join("\n");
         }).join("\n---\n");

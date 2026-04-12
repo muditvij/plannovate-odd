@@ -89,9 +89,10 @@ export function buildScheduleOccurrences({
           const course = normalize(entry.course);
           const teacher = normalize(entry.teacher);
           const room = normalize(entry.room);
+          const remark = entry.remark !== undefined ? entry.remark : undefined;
 
           // Skip truly empty blocks to keep the DB clean
-          if (!batch && !courseId && !teacherId && !roomId && !course && !teacher && !room) {
+          if (!batch && !courseId && !teacherId && !roomId && !course && !teacher && !room && (remark === undefined || remark === "")) {
             console.log(`⏭️ Skipping empty cell: ${tableId} [${rowIndex}, ${colIndex}, ${batchIndex}]`);
             continue;
           }
@@ -117,6 +118,11 @@ export function buildScheduleOccurrences({
             teacherId,
             roomId,
           };
+          
+          // Include remark if present
+          if (remark !== undefined) {
+            occurrence.remark = remark;
+          }
           
           occurrences.push(occurrence);
         }
@@ -162,6 +168,9 @@ export function reconstructTimetableFromSchedules(schedules) {
     if (o.courseId) batchEntry.courseId = String(o.courseId);
     if (o.teacherId) batchEntry.teacherId = String(o.teacherId);
     if (o.roomId) batchEntry.roomId = String(o.roomId);
+    
+    // Restore remark if present
+    if (o.remark !== undefined) batchEntry.remark = o.remark;
     
     // Legacy support: if old data has display names but no IDs, keep them
     // (This will be caught by validation and shown as "old format")

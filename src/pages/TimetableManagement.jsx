@@ -499,7 +499,12 @@ const Timetable = () => {
           const isSemesterMatch = String(c.semester) === String(meta.semester);
           const courseDept = String(c.department || "").toLowerCase().trim();
           const selectedBranch = String(meta.branch || "").toLowerCase().trim();
-          const isBranchMatch = !meta.branch || courseDept === selectedBranch;
+          
+          // Treat sections a, b, c as first-year sections, where branch matching isn't required 
+          // because 1st-year subjects are generally common
+          const isFirstYearSection = ['a', 'b', 'c', 'section a', 'section b', 'section c'].includes(selectedBranch);
+          
+          const isBranchMatch = !meta.branch || isFirstYearSection || courseDept === selectedBranch;
           
           return isSemesterMatch && isBranchMatch;
         });
@@ -922,6 +927,10 @@ const Timetable = () => {
             curriculumData={activeCurriculum}
             allCoursesRaw={allCoursesRaw}
             allTeachersRaw={allTeachersRaw}
+            roomBookings={effectiveRoomBookings}
+            allRoomsRaw={allRoomsRaw}
+            currentTabMeta={tabMetadata[activeTable] || {}}
+            currentTableKey={activeTable}
           />
           {!isMetadataComplete && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-lg z-10 pointer-events-all">

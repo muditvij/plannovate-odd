@@ -157,6 +157,7 @@ export function buildDraftRoomBookings({
             type: tableMeta?.type || "",
             courseId: entry?.courseId ? String(entry.courseId) : "",
             source: "draft",
+            sourceTableKey: tableKey,
           });
         }
       });

@@ -113,6 +113,11 @@ export async function saveSchedules({ timetableId, schedules }) {
         roomId: s.roomId ? String(s.roomId) : "",
       };
       
+      // Include remark if present
+      if (s.remark !== undefined) {
+        scheduleData.remark = s.remark;
+      }
+      
       batch.set(
         doc(schedulesCol, id),
         scheduleData,
