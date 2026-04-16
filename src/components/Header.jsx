@@ -8,7 +8,7 @@ const Header = () => {
   const currentPath = location.pathname;
 
   const isActive = (path) => currentPath === path;
-  const isLoadActive = ['/teacher-load', '/course-load', '/room-load'].includes(currentPath);
+  const isLoadActive = ['/teacher-load', '/course-load', '/room-load', '/manage-all-courses'].includes(currentPath);
   const isOccupancyActive = ['/teacher-occupancy', '/class-occupancy', '/room-occupancy'].includes(currentPath);
   const isAdminActive = ['/admin-settings'].includes(currentPath);
 
@@ -34,6 +34,7 @@ const Header = () => {
                   <div className="bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[160px]">
                     <a href="/teacher-load" className={`block px-4 py-2 text-sm transition-colors ${isActive('/teacher-load') ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>Staff</a>
                     <a href="/course-load" className={`block px-4 py-2 text-sm transition-colors ${isActive('/course-load') ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>Courses</a>
+                    <a href="/manage-all-courses" className={`block px-4 py-2 text-sm transition-colors ${isActive('/manage-all-courses') ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>Manage All Course</a>
                     <a href="/room-load" className={`block px-4 py-2 text-sm transition-colors ${isActive('/room-load') ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>Rooms</a>
                   </div>
                 </div>

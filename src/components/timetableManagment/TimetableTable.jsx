@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import TimetableCell from "./TimetableCell";
 
 const TimetableTable = ({ 
@@ -26,6 +26,65 @@ const TimetableTable = ({
   currentTableKey,
 }) => {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const scrollContainerRef = useRef(null);
+  const scrollIntervalRef = useRef(null);
+
+  // Auto-scroll logic during drag operations
+  const handleDragOver = (e) => {
+    if (!scrollContainerRef.current) return;
+
+    const container = scrollContainerRef.current;
+    const rect = container.getBoundingClientRect();
+    const threshold = 60; // Distance from edge to trigger scroll
+    const speed = 15; // Base scroll speed
+
+    const mouseX = e.clientX;
+    const mouseY = e.clientY;
+
+    let scrollX = 0;
+    let scrollY = 0;
+
+    // Calculate vertical scroll velocity
+    if (mouseY < rect.top + threshold) {
+      scrollY = -speed * ((rect.top + threshold - mouseY) / threshold);
+    } else if (mouseY > rect.bottom - threshold) {
+      scrollY = speed * ((mouseY - (rect.bottom - threshold)) / threshold);
+    }
+
+    // Calculate horizontal scroll velocity
+    if (mouseX < rect.left + threshold) {
+      scrollX = -speed * ((rect.left + threshold - mouseX) / threshold);
+    } else if (mouseX > rect.right - threshold) {
+      scrollX = speed * ((mouseX - (rect.right - threshold)) / threshold);
+    }
+
+    // Clear existing interval
+    if (scrollIntervalRef.current) {
+      cancelAnimationFrame(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
+
+    // Start scrolling if needed
+    if (scrollX !== 0 || scrollY !== 0) {
+      const performScroll = () => {
+        container.scrollTop += scrollY;
+        container.scrollLeft += scrollX;
+        scrollIntervalRef.current = requestAnimationFrame(performScroll);
+      };
+      scrollIntervalRef.current = requestAnimationFrame(performScroll);
+    }
+  };
+
+  const stopAutoScroll = () => {
+    if (scrollIntervalRef.current) {
+      cancelAnimationFrame(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => stopAutoScroll();
+  }, []);
 
   const isSameCell = (r1, r2, c) => {
     const key1 = `${r1}-${c}`;
@@ -68,7 +127,13 @@ const TimetableTable = ({
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-      <div className="overflow-auto max-h-[600px]">
+      <div 
+        ref={scrollContainerRef}
+        className="overflow-auto max-h-[600px] shadow-inner"
+        onDragOver={handleDragOver}
+        onDragLeave={stopAutoScroll}
+        onDrop={stopAutoScroll}
+      >
       <table className="w-full">
         <thead className="sticky top-0 z-20">
           <tr className="bg-gray-50 border-b border-gray-200">
@@ -138,3 +203,4 @@ const TimetableTable = ({
 };
 
 export default TimetableTable;
+
